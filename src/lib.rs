@@ -45,11 +45,52 @@ pub mod arg_parsing {
 
 #[cfg(test)]
 mod sb_tests {
+    // testing libraries
+    use proptest::prelude::*;
+
+    // module(s) under test
+    use crate::text_conversion::convert_to_sb_text;
+
+    const INPUT_REGEX: &'static str = "[a-zA-Z0-9[[:punct:]] ]+";
+
+    fn count_capital_letters(in_string: &str) -> usize {
+        in_string.chars().filter(|ch| ch.is_uppercase()).count()
+    }
 
     #[test]
     fn test_convert_to_sb_text() {
         let str = "Hello, World!";
-        let sb_text = crate::text_conversion::convert_to_sb_text(str);
+        let sb_text = convert_to_sb_text(str);
         assert_eq!(sb_text, "HeLlO, wOrLd!");
+    }
+
+    proptest! {
+        #[test]
+        fn is_idempotent(input_string in INPUT_REGEX) {
+            let result1 = convert_to_sb_text(&input_string);
+            let result2 = convert_to_sb_text(&input_string);
+
+            assert_eq!(result1, result2);
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn result_same_length_as_input(input_string in INPUT_REGEX) {
+            let result = convert_to_sb_text(&input_string);
+            assert_eq!(result.len(), input_string.len());
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn same_num_caps_in_reverse(input_string in INPUT_REGEX) {
+            let reverse_string: String = input_string.chars().rev().collect();
+
+            let forward_result = convert_to_sb_text(&input_string);
+            let reverse_result = convert_to_sb_text(&reverse_string);
+
+            assert_eq!(count_capital_letters(&forward_result), count_capital_letters(&reverse_result));
+        }
     }
 }
