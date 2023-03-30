@@ -53,8 +53,14 @@ mod sb_tests {
 
     const INPUT_REGEX: &'static str = "[a-zA-Z0-9[[:punct:]] ]+";
 
+    /// Counts the number of capital letters in a string.
     fn count_capital_letters(in_string: &str) -> usize {
         in_string.chars().filter(|ch| ch.is_uppercase()).count()
+    }
+
+    /// Returns an iterator over pairs of adjacent elements in the slice.
+    fn pairwise<T>(items: &[T]) -> impl Iterator<Item = (&T, &T)> {
+        items.iter().zip(items.iter().skip(1))
     }
 
     #[test]
@@ -91,6 +97,19 @@ mod sb_tests {
             let reverse_result = convert_to_sb_text(&reverse_string);
 
             assert_eq!(count_capital_letters(&forward_result), count_capital_letters(&reverse_result));
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn alternating_caps(input_string in INPUT_REGEX) {
+            let result = convert_to_sb_text(&input_string);
+
+            let alphabet_chars = result.chars().filter(|ch| ch.is_alphabetic()).collect::<Vec<char>>();
+
+            for (ch1, ch2) in pairwise(&alphabet_chars) {
+                assert_ne!(ch1.is_uppercase(), ch2.is_uppercase());
+            }
         }
     }
 }
